@@ -1,0 +1,6 @@
+[package]
+name = "easydb"
+version = "0.0.1"
+authors = ["liming <liming@admaster.com.cn>"]
+
+[dependencies]
