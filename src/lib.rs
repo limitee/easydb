@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 /**
  * 数据库的一列
  */
@@ -12,7 +14,8 @@ pub struct Column {
  * 数据库的表
  */
 pub struct Table {
-
+    name:String,    //表名
+    col_list:BTreeMap<String, Column>,
 }
 
 
