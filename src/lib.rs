@@ -10,6 +10,19 @@ pub struct Column {
     pub desc:String,    //其他信息
 }
 
+impl Column {
+
+    pub fn new(name:&str, ctype: &str, length:i32, desc: &str) -> Column {
+        Column {
+            name: name.to_string(),
+            ctype: ctype.to_string(),
+            length: length,
+            desc: desc.to_string(),
+        }
+    }
+
+}
+
 /**
  * 数据库的表
  */

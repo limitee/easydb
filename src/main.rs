@@ -16,6 +16,10 @@ fn main()
 
 	let mut map = BTreeMap::new();
 	map.insert(col.name.clone(), col);
+
+	let pass_col = Column::new("password", "varchar", 40, "user's password");
+	map.insert(pass_col.name.clone(), pass_col);
+
 	let table = Table {
 		name:"test".to_string(),
 		col_list:map,
