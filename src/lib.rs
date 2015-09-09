@@ -21,6 +21,18 @@ impl Column {
         }
     }
 
+    /**
+     * 获得列的ddl字符串
+     */
+    pub fn to_ddl_string(&self) -> String {
+        let mut str:String = format!("{} {}", self.name, self.ctype);
+        if self.length > 0 {
+            str = str + "(" + &self.length.to_string() + ")";
+        }
+        str = str + " " + &self.desc;
+        str
+    }
+
 }
 
 /**
@@ -31,4 +43,15 @@ pub struct Table {
     pub col_list:BTreeMap<String, Column>,
 }
 
+impl Table {
+
+    /**
+     * 获得表的ddl语句
+     */
+    pub fn get_ddl_string(&self) -> String {
+        let mut str:String = format!("create table {} (", self.name);
+        str
+    }
+
+}
 
