@@ -48,10 +48,21 @@ impl Table {
     /**
      * 获得表的ddl语句
      */
-    pub fn get_ddl_string(&self) -> String {
+    pub fn to_ddl_string(&self) -> String {
         let mut str:String = format!("create table {} (", self.name);
+        let mut count = 0;
+        for (key, value) in self.col_list.iter() {
+            if count > 0 {
+                str = str + ",";
+            }
+            str = str + &value.to_ddl_string();
+            count = count + 1;
+        }
+        str = str + ");";
         str
     }
+
+
 
 }
 

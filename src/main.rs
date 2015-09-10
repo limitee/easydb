@@ -28,6 +28,6 @@ fn main()
 	println!("the table's name is {}.", table.name);
 	println!("the table's column count is {}.", table.col_list.len());
 
-	println!("{}", table.get_ddl_string());
+	println!("{}", table.to_ddl_string());
 
 }
