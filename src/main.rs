@@ -4,6 +4,9 @@ use easydb::Table;
 
 use std::collections::BTreeMap;
 
+extern crate rustc_serialize;
+use rustc_serialize::json::Json;
+
 fn main()
 {
 	let col = Column {
@@ -30,4 +33,7 @@ fn main()
 
 	println!("{}", table.to_ddl_string());
 
+	let data = Json::from_str("{\"sort\": {\"id\":-1, \"name\":1}, \"bar\": \"baz\"}").unwrap();
+	let op = table.get_options(data);
+	println!("the op is {}.", op);
 }

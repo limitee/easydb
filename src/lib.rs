@@ -1,5 +1,8 @@
 use std::collections::BTreeMap;
 
+extern crate rustc_serialize;
+use rustc_serialize::json::Json;
+
 /**
  * 数据库的一列
  */
@@ -62,7 +65,35 @@ impl Table {
         str
     }
 
-
+    /**
+     * 获得附加参数的字符串表达形式
+     */
+    pub fn get_options(&self, options:Json) -> String {
+        let mut ret:String = "".to_string();
+        let options_obj = options.as_object().unwrap();
+        if let Some(x) = options_obj.get("sort") {
+            let sort_obj = x.as_object().unwrap();
+            let mut count = 0;
+            for (key, value) in sort_obj.iter() {
+                if count > 0 {
+                    ret = ret + ", ";
+                }
+                else
+                {
+                    ret = ret + " order by ";
+                }
+                ret = ret + key;
+                if value.as_i64().unwrap() > 0 {
+                    ret = ret + " asc";
+                }
+                else {
+                    ret = ret + " desc";
+                }
+                count = count + 1;
+            }
+        };
+        ret
+    }
 
 }
 
