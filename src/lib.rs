@@ -72,24 +72,26 @@ impl Table {
         let mut ret:String = "".to_string();
         let options_obj = options.as_object().unwrap();
         if let Some(x) = options_obj.get("sort") {
-            let sort_obj = x.as_object().unwrap();
-            let mut count = 0;
-            for (key, value) in sort_obj.iter() {
-                if count > 0 {
+            let sort_obj = x.as_array().unwrap();
+            let length = sort_obj.len();
+            for x in 0..length {
+                let sort_obj_tmp = sort_obj[x].as_object().unwrap();
+                if x > 0 {
                     ret = ret + ", ";
                 }
                 else
                 {
                     ret = ret + " order by ";
                 }
-                ret = ret + key;
-                if value.as_i64().unwrap() > 0 {
-                    ret = ret + " asc";
+                for (key, value) in sort_obj_tmp.iter() {
+                    ret = ret + key;
+                    if value.as_i64().unwrap() > 0 {
+                        ret = ret + " asc";
+                    }
+                    else {
+                        ret = ret + " desc";
+                    }
                 }
-                else {
-                    ret = ret + " desc";
-                }
-                count = count + 1;
             }
         };
         ret
