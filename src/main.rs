@@ -33,7 +33,7 @@ fn main()
 
 	println!("{}", table.to_ddl_string());
 
-	let data = Json::from_str("{\"sort\": [{\"name\":1}, {\"id\":-1}], \"bar\": \"baz\"}").unwrap();
+	let data = Json::from_str("{\"sort\": [{\"name\":1}, {\"id\":-1}], \"limit\": 1, \"offset\": 10, \"ret\":{\"id\":1}}").unwrap();
 	let op = table.get_options(data);
 	println!("the op is {}.", op);
 }

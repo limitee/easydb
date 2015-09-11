@@ -3,6 +3,9 @@ use std::collections::BTreeMap;
 extern crate rustc_serialize;
 use rustc_serialize::json::Json;
 
+mod util;
+use util::DbUtil;
+
 /**
  * 数据库的一列
  */
@@ -54,7 +57,7 @@ impl Table {
     pub fn to_ddl_string(&self) -> String {
         let mut str:String = format!("create table {} (", self.name);
         let mut count = 0;
-        for (key, value) in self.col_list.iter() {
+        for (_, value) in self.col_list.iter() {
             if count > 0 {
                 str = str + ",";
             }
@@ -71,6 +74,7 @@ impl Table {
     pub fn get_options(&self, options:Json) -> String {
         let mut ret:String = "".to_string();
         let options_obj = options.as_object().unwrap();
+        //sort属性必须对应一个数组，如[{\"a\":1, \"b\":-1}]
         if let Some(x) = options_obj.get("sort") {
             let sort_obj = x.as_array().unwrap();
             let length = sort_obj.len();
@@ -92,6 +96,30 @@ impl Table {
                         ret = ret + " desc";
                     }
                 }
+            }
+        };
+        //limit属性是一个整数
+        if let Some(x) = options_obj.get("limit") {
+            ret = ret + " limit " + &x.as_i64().unwrap().to_string();
+        };
+        //offset属性是一个整数
+        if let Some(x) = options_obj.get("offset") {
+            ret = ret + " offset " + &x.as_i64().unwrap().to_string();
+        };
+        //ret定义更新时要返回的数据
+        if let Some(x) = options_obj.get("ret") {
+            let ret_obj = x.as_object().unwrap();
+            let mut count = 0;
+            for (key, _) in ret_obj.iter() {
+                if count > 0 {
+                    ret = ret + ", ";
+                }
+                else
+                {
+                    ret = ret + " returning ";
+                }
+                ret = ret + key;
+                count = count + 1;
             }
         };
         ret
