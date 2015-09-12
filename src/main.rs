@@ -16,6 +16,7 @@ fn main()
 		desc:"not null".to_string(),
 	};
 	println!("the column's name is {}.", col.name);
+	println!("the kv pair is {}.", col.get_kv_pair("=", 10));
 
 	let mut map = BTreeMap::new();
 	map.insert(col.name.clone(), col);
@@ -35,5 +36,5 @@ fn main()
 
 	let data = Json::from_str("{\"sort\": [{\"name\":1}, {\"id\":-1}], \"limit\": 1, \"offset\": 10, \"ret\":{\"id\":1}}").unwrap();
 	let op = table.get_options(data);
-	println!("the op is {}.", op);
+	println!("the op is {}.", op);	
 }

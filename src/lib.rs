@@ -3,8 +3,14 @@ use std::collections::BTreeMap;
 extern crate rustc_serialize;
 use rustc_serialize::json::Json;
 
-mod util;
-use util::DbUtil;
+/**
+ * 数据库辅助工具类
+ */
+pub struct DbUtil;
+
+impl DbUtil {
+
+}
 
 /**
  * 数据库的一列
@@ -37,6 +43,38 @@ impl Column {
         }
         str = str + " " + &self.desc;
         str
+    }
+
+    /**
+     * 把键值对转换成sql表达式
+     */
+    pub fn get_kv_pair<T:ToString>(&self, op:&str, value:T) -> String
+    {
+        let mut exp:String = self.name.clone() + " " + op + " ";
+        if self.ctype == "integer" || self.ctype == "bigint" {
+            exp = exp + &value.to_string();
+        }
+        else if op == "in" {
+            exp = exp + &value.to_string();
+        }
+        else {
+            exp = exp + "'" + &value.to_string() + "'";
+        }
+        exp
+    }
+
+    /**
+     * 获得列的名称
+     */
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    /**
+     * 获得列的类型
+     */
+    pub fn get_ctype(&self) -> String {
+        self.ctype.clone()
     }
 
 }
