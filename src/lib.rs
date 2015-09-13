@@ -58,6 +58,7 @@ impl Column {
             exp = exp + &value.to_string();
         }
         else {
+            //TODO escape
             exp = exp + "'" + &value.to_string() + "'";
         }
         exp
@@ -160,6 +161,32 @@ impl Table {
                 count = count + 1;
             }
         };
+        ret
+    }
+
+    /**
+     * 获得data条件所表示的sql的where条件字符串
+     */
+    pub fn condition(&self, data:Json, parent_col_name:&str) -> String {
+        let parent_col_option:Option<&Column> = self.col_list.get(parent_col_name);
+        let mut ret:String = "".to_string();
+        let mut count:u32 = 0;
+        let data_obj = data.as_object().unwrap();
+        for (key, value) in data_obj.iter() {
+            if count > 0 {
+                ret = ret + " and ";
+            }
+            else
+            {
+                ret = ret + " returning ";
+            }
+            ret = ret + key;
+            count = count + 1;
+        }
+        if parent_col_option.is_some() {
+            println!("here--------------");
+        }
+        //println!("the parent col is {}.", parent_col.to_ddl_string());
         ret
     }
 
