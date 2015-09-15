@@ -3,6 +3,9 @@ use std::collections::BTreeMap;
 extern crate rustc_serialize;
 use rustc_serialize::json::Json;
 
+extern crate regex;
+use regex::Regex;
+
 /**
  * 数据库辅助工具类
  */
@@ -110,7 +113,7 @@ impl Table {
     /**
      * 获得附加参数的字符串表达形式
      */
-    pub fn get_options(&self, options:Json) -> String {
+    pub fn get_options(&self, options:&Json) -> String {
         let mut ret:String = "".to_string();
         let options_obj = options.as_object().unwrap();
         //sort属性必须对应一个数组，如[{\"a\":1, \"b\":-1}]
@@ -167,10 +170,13 @@ impl Table {
     /**
      * 获得data条件所表示的sql的where条件字符串
      */
-    pub fn condition(&self, data:Json, parent_col_name:&str) -> String {
+    pub fn condition(&self, data:&Json, parent_col_name:&str) -> String {
         let parent_col_option:Option<&Column> = self.col_list.get(parent_col_name);
         let mut ret:String = "".to_string();
         let mut count:u32 = 0;
+
+        let re = Regex::new(r"\$([a-z]+)").unwrap();
+        
         let data_obj = data.as_object().unwrap();
         for (key, value) in data_obj.iter() {
             if count > 0 {
@@ -181,6 +187,15 @@ impl Table {
                 ret = ret + " returning ";
             }
             ret = ret + key;
+
+            let iter = re.captures_iter(key);   
+            if let Some(x) = iter.last() {
+                println!("match----------------");
+            }
+            else {
+                println!("not match----------------");
+            };
+
             count = count + 1;
         }
         if parent_col_option.is_some() {
