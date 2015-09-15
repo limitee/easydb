@@ -38,6 +38,6 @@ fn main()
 	let op = table.get_options(&data);
 	println!("the op is {}.", op);
 
-	let cdata = Json::from_str("{\"$lt\":\"abc\"}").unwrap();
+	let cdata = Json::from_str("{\"$lt\":\"abc\", \"name\":\"liming\"}").unwrap();
 	println!("the condition is {}", table.condition(&cdata, "name"));
 }

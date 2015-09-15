@@ -186,15 +186,22 @@ impl Table {
             {
                 ret = ret + " returning ";
             }
-            ret = ret + key;
 
             let iter = re.captures_iter(key);
             //如果匹配上 
 			if let Some(x) = iter.last() {
-                println!("match----------------");
             }
             else {
-                println!("not match----------------");
+                let mut kv:String = "(".to_string();
+                if value.is_object() {  //值是一个对象,递归调用condition方法
+                    self.condition(&value, key);         
+                } else {
+                    if let Some(x) = self.col_list.get(key) {
+                        kv = kv + &x.get_kv_pair("=", value.to_string());
+                    }
+                }
+                ret = ret + &kv;
+                println!("not match----------------{}", kv);
             };
 
             count = count + 1;
