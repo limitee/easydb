@@ -12,7 +12,17 @@ use regex::Regex;
 pub struct DbUtil;
 
 impl DbUtil {
-
+    
+    /**
+     * 获得json基础类型的字符串表达形式
+     */
+    pub fn get_pure_json_string(data:&Json) -> String {
+       let ret = match *data {
+           Json::String(ref x) => format!("{}", x),
+           _ => data.to_string(),
+       };
+       ret
+    }
 }
 
 /**
@@ -191,17 +201,16 @@ impl Table {
             //如果匹配上 
 			if let Some(x) = iter.last() {
             }
-            else {
+            else { //未匹配上，值是object，递归调用condition，否则，组成kv字符串
                 let mut kv:String = "(".to_string();
                 if value.is_object() {  //值是一个对象,递归调用condition方法
                     self.condition(&value, key);         
                 } else {
                     if let Some(x) = self.col_list.get(key) {
-                        kv = kv + &x.get_kv_pair("=", value.to_string());
+                        kv = kv + &x.get_kv_pair("=", DbUtil::get_pure_json_string(&value));
                     }
                 }
-                ret = ret + &kv;
-                println!("not match----------------{}", kv);
+                ret = ret + &kv + ")";
             };
 
             count = count + 1;
