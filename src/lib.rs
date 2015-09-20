@@ -194,14 +194,25 @@ impl Table {
             }
             let iter = re.captures_iter(key);
             //如果匹配上 
-			if let Some(x) = iter.last() {
+            if let Some(x) = iter.last() {
                 let mut exp:String = "(".to_string();
                 let key:&str = x.at(1).unwrap_or("");
                 if parent_col_option.is_some() {
-                    if key == "gt" || key == "gte" || key == "lt" {
-                        let parent_col:&Column = parent_col_option.unwrap();
-                        exp = exp + &parent_col.get_kv_pair("<", DbUtil::get_pure_json_string(&value)); 
+                    let parent_col:&Column = parent_col_option.unwrap();
+                    let mut op:&str = "";
+                    if key == "gt" {
+                        op = ">";
                     }
+                    else if key == "gte" {
+                        op = ">=";
+                    }
+                    else if key == "lt" {
+                        op = "<";
+                    }
+                    else if key == "lte" {
+                        op = "<=";
+                    }
+                    exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
                 }
                 ret = ret + &exp + ")";
             }
