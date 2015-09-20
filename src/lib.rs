@@ -192,14 +192,18 @@ impl Table {
             if count > 0 {
                 ret = ret + " and ";
             }
-            else
-            {
-                ret = ret + " returning ";
-            }
-
             let iter = re.captures_iter(key);
             //如果匹配上 
 			if let Some(x) = iter.last() {
+                let mut exp:String = "(".to_string();
+                let key:&str = x.at(1).unwrap_or("");
+                if parent_col_option.is_some() {
+                    if key == "gt" || key == "gte" || key == "lt" {
+                        let parent_col:&Column = parent_col_option.unwrap();
+                        exp = exp + &parent_col.get_kv_pair("<", DbUtil::get_pure_json_string(&value)); 
+                    }
+                }
+                ret = ret + &exp + ")";
             }
             else { //未匹配上，值是object，递归调用condition，否则，组成kv字符串
                 let mut kv:String = "(".to_string();
@@ -214,9 +218,6 @@ impl Table {
             };
 
             count = count + 1;
-        }
-        if parent_col_option.is_some() {
-            println!("here--------------");
         }
         //println!("the parent col is {}.", parent_col.to_ddl_string());
         ret
