@@ -202,17 +202,27 @@ impl Table {
                     let mut op:&str = "";
                     if key == "gt" {
                         op = ">";
+                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "gte" {
                         op = ">=";
+                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "lt" {
                         op = "<";
+                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "lte" {
                         op = "<=";
+                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
                     }
-                    exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                    else if key == "ne" {
+                        op = "!=";
+                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                    }
+                    else if key == "or" {
+                         
+                    }
                 }
                 ret = ret + &exp + ")";
             }
