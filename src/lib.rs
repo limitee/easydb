@@ -199,29 +199,32 @@ impl Table {
                 let key:&str = x.at(1).unwrap_or("");
                 if parent_col_option.is_some() {
                     let parent_col:&Column = parent_col_option.unwrap();
-                    let mut op:&str = "";
                     if key == "gt" {
-                        op = ">";
-                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair(">", DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "gte" {
-                        op = ">=";
-                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair(">=", DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "lt" {
-                        op = "<";
-                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair("<", DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "lte" {
-                        op = "<=";
-                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair("<=", DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "ne" {
-                        op = "!=";
-                        exp = exp + &parent_col.get_kv_pair(op, DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair("!=", DbUtil::get_pure_json_string(&value)); 
                     }
                     else if key == "or" {
-                         
+                        let or_data_array:&Vec<Json> = value.as_array().unwrap(); 
+                        let mut or_count:i32 = 0;
+                        for or_json in or_data_array {
+                            println!("the json is {}.", or_json.to_string());
+                            if or_count > 0 {
+                                exp = exp + " or ";
+                            }
+                            exp = exp + &self.condition(or_json, "");    
+                            or_count = or_count + 1;
+                        }
                     }
                 }
                 ret = ret + &exp + ")";
@@ -229,7 +232,7 @@ impl Table {
             else { //未匹配上，值是object，递归调用condition，否则，组成kv字符串
                 let mut kv:String = "(".to_string();
                 if value.is_object() {  //值是一个对象,递归调用condition方法
-                    self.condition(&value, key);         
+                    kv = kv + &self.condition(&value, key);         
                 } else {
                     if let Some(x) = self.col_list.get(key) {
                         kv = kv + &x.get_kv_pair("=", DbUtil::get_pure_json_string(&value));

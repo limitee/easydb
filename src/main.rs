@@ -25,6 +25,10 @@ fn main()
 	println!("the ddl col string is {}.", pass_col.to_ddl_string());
 	map.insert(pass_col.name.clone(), pass_col);
 
+    let nickname_col = Column::new("nickname", "varchar", 40, "not null");
+    println!("the ddl col string is {}.", nickname_col.to_ddl_string());
+    map.insert(nickname_col.name.clone(), nickname_col);
+
 	let table = Table {
 		name:"test".to_string(),
 		col_list:map,
@@ -38,6 +42,6 @@ fn main()
 	let op = table.get_options(&data);
 	println!("the op is {}.", op);
 
-	let cdata = Json::from_str("{\"$lt\":\"abc\", \"name\":\"liming\"}").unwrap();
+	let cdata = Json::from_str("{\"nickname\":{\"$lt\":\"abc\"}, \"name\":\"liming\", \"$or\":[{\"name\":\"liming\"}, {\"password\":\"123\"}]}").unwrap();
 	println!("the condition is {}", table.condition(&cdata, "name"));
 }
