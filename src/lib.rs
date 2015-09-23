@@ -17,11 +17,22 @@ impl DbUtil {
      * 获得json基础类型的字符串表达形式
      */
     pub fn get_pure_json_string(data:&Json) -> String {
-       let ret = match *data {
-           Json::String(ref x) => format!("{}", x),
-           _ => data.to_string(),
-       };
-       ret
+        let ret = match *data {
+            Json::String(ref x) => format!("{}", x),
+            _ => data.to_string(),
+        };
+        ret
+    }
+   
+    /**
+     * 获得sql所需的字符串表达形式
+     */
+    pub fn get_sql_string(data:&Json) -> String {
+        let ret = match *data {
+            Json::String(ref x) => format!("'{}'", x),
+            _ => data.to_string(),
+        };
+        ret
     }
 }
 
@@ -218,13 +229,25 @@ impl Table {
                         let or_data_array:&Vec<Json> = value.as_array().unwrap(); 
                         let mut or_count:i32 = 0;
                         for or_json in or_data_array {
-                            println!("the json is {}.", or_json.to_string());
                             if or_count > 0 {
                                 exp = exp + " or ";
                             }
                             exp = exp + &self.condition(or_json, "");    
                             or_count = or_count + 1;
                         }
+                    }
+                    else if key == "in" {
+                        let in_data_array:&Vec<Json> = value.as_array().unwrap();
+                        let mut in_count:i32 = 0;
+                        let mut in_string:String = "".to_string();
+                        for in_json in in_data_array {
+                            if in_count > 0 {
+                                in_string = in_string + ",";
+                            }
+                            in_string = in_string + &DbUtil::get_sql_string(in_json);
+                            in_count = in_count + 1;
+                        }
+                        exp = exp + &parent_col.get_kv_pair("in", in_string);
                     }
                 }
                 ret = ret + &exp + ")";

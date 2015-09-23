@@ -29,6 +29,11 @@ fn main()
     println!("the ddl col string is {}.", nickname_col.to_ddl_string());
     map.insert(nickname_col.name.clone(), nickname_col);
 
+    let age_col = Column::new("age", "int", -1, "");
+    println!("the ddl col string is {}.", age_col.to_ddl_string());
+    map.insert(age_col.name.clone(), age_col);
+
+
 	let table = Table {
 		name:"test".to_string(),
 		col_list:map,
@@ -42,6 +47,6 @@ fn main()
 	let op = table.get_options(&data);
 	println!("the op is {}.", op);
 
-	let cdata = Json::from_str("{\"nickname\":{\"$lt\":\"abc\"}, \"name\":\"liming\", \"$or\":[{\"name\":\"liming\"}, {\"password\":\"123\"}]}").unwrap();
+	let cdata = Json::from_str("{\"age\":{\"$in\":[1, 2, 3]}, \"nickname\":{\"$lt\":\"abc\"}, \"name\":\"liming\", \"$or\":[{\"name\":\"liming\"}, {\"password\":\"123\"}]}").unwrap();
 	println!("the condition is {}", table.condition(&cdata, "name"));
 }
