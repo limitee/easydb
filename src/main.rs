@@ -25,13 +25,13 @@ fn main()
 	println!("the ddl col string is {}.", pass_col.to_ddl_string());
 	map.insert(pass_col.name.clone(), pass_col);
 
-    let nickname_col = Column::new("nickname", "varchar", 40, "not null");
-    println!("the ddl col string is {}.", nickname_col.to_ddl_string());
-    map.insert(nickname_col.name.clone(), nickname_col);
+  let nickname_col = Column::new("nickname", "varchar", 40, "not null");
+  println!("the ddl col string is {}.", nickname_col.to_ddl_string());
+  map.insert(nickname_col.name.clone(), nickname_col);
 
-    let age_col = Column::new("age", "int", -1, "");
-    println!("the ddl col string is {}.", age_col.to_ddl_string());
-    map.insert(age_col.name.clone(), age_col);
+  let age_col = Column::new("age", "int", -1, "");
+  println!("the ddl col string is {}.", age_col.to_ddl_string());
+  map.insert(age_col.name.clone(), age_col);
 
 
 	let table = Table {

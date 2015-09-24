@@ -188,6 +188,26 @@ impl Table {
         ret
     }
 
+
+    /**
+     * 获得更新的sql
+     */
+    pub fn get_update_str(&self, data:&Json) -> String {
+        let mut ret:String = "".to_string();
+        let mut count:i32 = 0;
+        let re = Regex::new(r"\$([a-z]+)").unwrap();
+        let data_obj = data.as_object().unwrap();
+        for (key, value) in data_obj.iter() {
+            let iter = re.captures_iter(key);
+            if let some(x) = iter.last() {
+                let key:&str = x.at(1).unwrap_or("");
+
+            }
+        }
+        ret
+    }
+
+
     /**
      * 获得data条件所表示的sql的where条件字符串
      */
