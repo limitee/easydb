@@ -197,13 +197,42 @@ impl Table {
         let mut count:i32 = 0;
         let re = Regex::new(r"\$([a-z]+)").unwrap();
         let data_obj = data.as_object().unwrap();
+        let mut set_count:i32 = 0;
         for (key, value) in data_obj.iter() {
             let iter = re.captures_iter(key);
-            if let some(x) = iter.last() {
+            if let Some(x) = iter.last() {
                 let key:&str = x.at(1).unwrap_or("");
-
+                if key == "set" {
+                    let set_obj = (&value).as_object().unwrap();
+                    for (set_key, set_value) in set_obj.iter() {
+                        if set_count > 0 {
+                            ret = ret + ",";
+                        }
+                        let col_option:Option<&Column> = self.col_list.get(set_key);
+                        if col_option.is_some() {
+                            let col = col_option.unwrap();
+                            ret = ret + &col.get_kv_pair("=", DbUtil::get_pure_json_string(&set_value));
+                            set_count = set_count + 1;
+                        }
+                    }
+                }
+                else if key == "inc" {
+                    let inc_obj = (&value).as_object().unwrap();
+                    for (inc_key, inc_value) in inc_obj.iter() {
+                        if set_count > 0 {
+                            ret = ret + ",";
+                        }
+                        let col_option:Option<&Column> = self.col_list.get(inc_key);
+                        if col_option.is_some() {
+                            let col = col_option.unwrap();
+                            ret = ret + inc_key + " = " + inc_key + " + " + &inc_value.to_string();
+                            set_count = set_count + 1;
+                        }
+                    }
+                }
             }
         }
+        println!("the ret is {}.", ret);
         ret
     }
 

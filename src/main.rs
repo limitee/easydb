@@ -49,4 +49,8 @@ fn main()
 
 	let cdata = Json::from_str("{\"age\":{\"$in\":[1, 2, 3]}, \"nickname\":{\"$lt\":\"abc\"}, \"name\":\"liming\", \"$or\":[{\"name\":\"liming\"}, {\"password\":\"123\"}]}").unwrap();
 	println!("the condition is {}", table.condition(&cdata, "name"));
+
+    let up_data = Json::from_str("{\"$set\":{\"name\":\"123\"}, \"$inc\":{\"age\":10}}").unwrap();
+    table.get_update_str(&up_data);
+ 
 }
