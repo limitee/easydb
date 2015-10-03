@@ -6,6 +6,12 @@ use rustc_serialize::json::Json;
 extern crate regex;
 use regex::Regex;
 
+
+pub trait DbCenter {
+    fn execute(sql:&str) -> Json;
+}    
+
+
 /**
  * 数据库辅助工具类
  */
@@ -107,12 +113,13 @@ impl Column {
 /**
  * 数据库的表
  */
-pub struct Table {
+pub struct Table<T> {
     pub name:String,    //表名
     pub col_list:BTreeMap<String, Column>,
+    pub dc:T,
 }
 
-impl Table {
+impl<T:DbCenter> Table<T> {
 
     /**
      * 获得表的ddl语句
@@ -194,7 +201,6 @@ impl Table {
      */
     pub fn get_update_str(&self, data:&Json) -> String {
         let mut ret:String = "".to_string();
-        let mut count:i32 = 0;
         let re = Regex::new(r"\$([a-z]+)").unwrap();
         let data_obj = data.as_object().unwrap();
         let mut set_count:i32 = 0;
@@ -224,7 +230,6 @@ impl Table {
                         }
                         let col_option:Option<&Column> = self.col_list.get(inc_key);
                         if col_option.is_some() {
-                            let col = col_option.unwrap();
                             ret = ret + inc_key + " = " + inc_key + " + " + &inc_value.to_string();
                             set_count = set_count + 1;
                         }
@@ -319,5 +324,93 @@ impl Table {
         ret
     }
 
+    /**
+     * get count by the condition. 
+     */
+    pub fn count(&self, data:&Json, options:&Json) {
+        let mut sql:String = "select count(*) from ".to_string() + &self.name;
+        let cond = self.condition(data, "");
+        if cond.len() > 0 {
+            sql = sql + " where " + &cond;
+        }
+        sql = sql + &self.get_options(options);
+        println!("the sql is {}", sql);
+        
+    }
+
+    
+    /**
+     * sql的select语句
+     *
+     */
+    pub fn find(&self, cond:&Json, data:&Json, options:&Json) {
+        let mut sql:String = "select ".to_string();
+        let mut key_str:String = String::new();
+        let columns = data.as_object().unwrap();
+        let mut col_count:i32 = 0;
+        for (key, value) in columns.iter() {
+            if col_count > 0 {
+                key_str = key_str + ",";
+            }
+            key_str = key_str + key;
+            col_count = col_count + 1;
+        }
+        if key_str.len() == 0 {
+            key_str = "*".to_string();
+        }
+        sql = sql + &key_str + " from " + &self.name;
+        let cond:String = self.condition(cond, "");
+        if cond.len() > 0 {
+            sql = sql + &cond;
+        }
+        sql = sql + &self.get_options(options);
+        println!("the sql is {}.", sql);
+    }
+    
+    pub fn save(&self, data:&Json, options:&Json) {
+         
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
