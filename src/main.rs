@@ -15,7 +15,8 @@ struct MyDbCenter {
 
 impl DbCenter for MyDbCenter {
 
-    fn execute(sql:&str) -> Json {
+    fn execute(&self, sql:&str) -> Json {
+        println!("{}", sql);
         Json::from_str("{\"$set\":{\"name\":\"123\"}, \"$inc\":{\"age\":10}}").unwrap()    
     }
 
@@ -55,7 +56,7 @@ fn main()
 	let table = Table {
 		name:"test".to_string(),
 		col_list:map,
-        dc:my_dc,
+        dc:&my_dc,
 	};
 	println!("the table's name is {}.", table.name);
 	println!("the table's column count is {}.", table.col_list.len());

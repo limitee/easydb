@@ -8,7 +8,7 @@ use regex::Regex;
 
 
 pub trait DbCenter {
-    fn execute(sql:&str) -> Json;
+    fn execute(&self, sql:&str) -> Json;
 }    
 
 
@@ -113,13 +113,13 @@ impl Column {
 /**
  * 数据库的表
  */
-pub struct Table<T> {
+pub struct Table<'a, T:'a> {
     pub name:String,    //表名
     pub col_list:BTreeMap<String, Column>,
-    pub dc:T,
+    pub dc:&'a T,
 }
 
-impl<T:DbCenter> Table<T> {
+impl<'a, T:DbCenter> Table<'a, T> {
 
     /**
      * 获得表的ddl语句
@@ -365,6 +365,7 @@ impl<T:DbCenter> Table<T> {
         }
         sql = sql + &self.get_options(options);
         println!("the sql is {}.", sql);
+        self.dc.execute(&sql);
     }
     
     pub fn save(&self, data:&Json, options:&Json) {
