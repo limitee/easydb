@@ -40,6 +40,14 @@ impl DbUtil {
         };
         ret
     }
+
+    /**
+     * escape字符串
+     */
+    pub fn escape(value:&str) -> String {
+        value.replace("'", "''")
+    }  
+
 }
 
 /**
@@ -50,16 +58,18 @@ pub struct Column {
     pub ctype:String,    //类型
     pub length:i32,     //长度
     pub desc:String,    //其他信息
+    pub escape:bool,
 }
 
 impl Column {
 
-    pub fn new(name:&str, ctype: &str, length:i32, desc: &str) -> Column {
+    pub fn new(name:&str, ctype: &str, length:i32, desc: &str, escape:bool) -> Column {
         Column {
             name: name.to_string(),
             ctype: ctype.to_string(),
             length: length,
             desc: desc.to_string(),
+            escape:escape,
         }
     }
 
@@ -89,7 +99,12 @@ impl Column {
         }
         else {
             //TODO escape
-            exp = exp + "'" + &value.to_string() + "'";
+            if self.escape {
+                exp = exp + "'" + &DbUtil::escape(&value.to_string()) + "'";
+            }
+            else {
+                exp = exp + "'" + &value.to_string() + "'";
+            }
         }
         exp
     }
@@ -327,15 +342,14 @@ impl<'a, T:DbCenter> Table<'a, T> {
     /**
      * get count by the condition. 
      */
-    pub fn count(&self, data:&Json, options:&Json) {
+    pub fn count(&self, data:&Json, options:&Json) -> Json {
         let mut sql:String = "select count(*) from ".to_string() + &self.name;
         let cond = self.condition(data, "");
         if cond.len() > 0 {
             sql = sql + " where " + &cond;
         }
         sql = sql + &self.get_options(options);
-        println!("the sql is {}", sql);
-        
+        self.dc.execute(&sql) 
     }
 
     
@@ -343,7 +357,7 @@ impl<'a, T:DbCenter> Table<'a, T> {
      * sql的select语句
      *
      */
-    pub fn find(&self, cond:&Json, data:&Json, options:&Json) {
+    pub fn find(&self, cond:&Json, data:&Json, options:&Json) -> Json {
         let mut sql:String = "select ".to_string();
         let mut key_str:String = String::new();
         let columns = data.as_object().unwrap();
@@ -364,12 +378,30 @@ impl<'a, T:DbCenter> Table<'a, T> {
             sql = sql + &cond;
         }
         sql = sql + &self.get_options(options);
-        println!("the sql is {}.", sql);
-        self.dc.execute(&sql);
+        self.dc.execute(&sql)
     }
     
-    pub fn save(&self, data:&Json, options:&Json) {
-         
+    /**
+     * 保存数据到数据库
+     */
+    pub fn save(&self, data:&Json, options:&Json) -> Json {
+        let mut sql:String = "insert into ".to_string() + &self.name + " (";
+        let data_obj = data.as_object().unwrap();
+        let mut data_obj_key_count:i32 = 0;
+        let mut key_str:String = String::new();
+        let mut value_str:String = String::new();
+        for (key, value) in data_obj.iter() {
+            let col_option:Option<&Column> = self.col_list.get(key);
+            if col_option.is_some() {
+                if data_obj_key_count > 0 {
+                    key_str = key_str + ",";
+                    value_str = value_str + ",";
+                }
+                key_str = key_str + key; 
+                data_obj_key_count = data_obj_key_count + 1;
+            }
+        }
+        self.dc.execute(&sql)
     }
 
 }
