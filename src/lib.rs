@@ -110,6 +110,25 @@ impl Column {
     }
 
     /**
+     * 获得column对应的值
+     */
+    pub fn get_value(&self, value:&Json) -> String {
+        let mut value_str = String::new();
+        if self.ctype == "integer" || self.ctype == "bigint" {
+            value_str = value.to_string(); 
+        }
+        else {
+            if self.escape {
+                value_str = "'".to_string() + &DbUtil::escape(&DbUtil::get_pure_json_string(value)) + "'";
+            }
+            else {
+                value_str = "'".to_string() + &DbUtil::get_pure_json_string(value) + "'";
+            }
+        }
+        value_str
+    }
+
+    /**
      * 获得列的名称
      */
     pub fn get_name(&self) -> String {
@@ -393,17 +412,27 @@ impl<'a, T:DbCenter> Table<'a, T> {
         for (key, value) in data_obj.iter() {
             let col_option:Option<&Column> = self.col_list.get(key);
             if col_option.is_some() {
+                let col:&Column = col_option.unwrap();
                 if data_obj_key_count > 0 {
                     key_str = key_str + ",";
                     value_str = value_str + ",";
                 }
                 key_str = key_str + key; 
+                value_str = value_str + &col.get_value(value);
                 data_obj_key_count = data_obj_key_count + 1;
             }
         }
+        sql = sql + &key_str + ") values (" + &value_str + ")" + &self.get_options(options);
         self.dc.execute(&sql)
     }
 
+    /**
+     * 删除符合条件的数据
+     */
+    pub fn remove(&self, cond:&Json) -> Json {
+        let mut sql:String = "".to_string();
+        self.dc.execute(&sql)
+    }
 }
 
 

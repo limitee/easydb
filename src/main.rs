@@ -83,4 +83,10 @@ fn main()
     let fd_options = Json::from_str("{}").unwrap();
     let fd_back = table.find(&fd_cond, &fd_data, &fd_options); 
     println!("the back is {}", fd_back);
+
+
+    let sv_data = Json::from_str("{\"name\":\"123\"}").unwrap();
+    let sv_options = Json::from_str("{}").unwrap();
+    let sv_back = table.save(&sv_data, &sv_options);
+    println!("the save back is {}", sv_back);
 }
