@@ -394,7 +394,7 @@ impl<'a, T:DbCenter> Table<'a, T> {
         sql = sql + &key_str + " from " + &self.name;
         let cond:String = self.condition(cond, "");
         if cond.len() > 0 {
-            sql = sql + &cond;
+            sql = sql + " where " +  &cond;
         }
         sql = sql + &self.get_options(options);
         self.dc.execute(&sql)
@@ -429,8 +429,13 @@ impl<'a, T:DbCenter> Table<'a, T> {
     /**
      * 删除符合条件的数据
      */
-    pub fn remove(&self, cond:&Json) -> Json {
-        let mut sql:String = "".to_string();
+    pub fn remove(&self, cond:&Json, options:&Json) -> Json {
+        let mut sql:String = "delete from ".to_string() + &self.name;
+        let cond:String = self.condition(cond, "");
+        if cond.len() > 0 {
+            sql = sql + " where " + &cond; 
+        }
+        sql = sql + &self.get_options(options);
         self.dc.execute(&sql)
     }
 }
