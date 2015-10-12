@@ -20,7 +20,8 @@ impl DbCenter for MyDbCenter {
 
     fn execute(&self, sql:&str) -> Json {
         println!("{}", sql);
-        let rows = self.conn.execute(&sql, &[]).unwrap();
+        let stmt = self.conn.prepare(&sql).unwrap();
+        let rows = stmt.query(&[]).unwrap();
         println!("the result is {:?}", rows);
         Json::from_str("{\"$set\":{\"name\":\"123\"}, \"$inc\":{\"age\":10}}").unwrap()    
     }
@@ -94,7 +95,7 @@ fn main()
     let count_options = Json::from_str("{}").unwrap();
     table.count(&count_data, &count_options);
     
-    let fd_cond = Json::from_str("{\"name\":\"234\"}").unwrap();
+    let fd_cond = Json::from_str("{\"name\":\"123\"}").unwrap();
     let fd_data = Json::from_str("{}").unwrap();
     let fd_options = Json::from_str("{}").unwrap();
     let fd_back = table.find(&fd_cond, &fd_data, &fd_options); 
