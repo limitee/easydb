@@ -102,7 +102,7 @@ fn main()
 
 
     let sv_data = Json::from_str("{\"name\":\"123\", \"nickname\":\"ming\", \"password\":\"123456\", \"age\":1}").unwrap();
-    let sv_options = Json::from_str("{}").unwrap();
+    let sv_options = Json::from_str("{\"ret\":{\"id\":1}}").unwrap();
     let sv_back = table.save(&sv_data, &sv_options);
     println!("the save back is {}", sv_back);
 
