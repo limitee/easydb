@@ -66,7 +66,9 @@ fn main()
     let age_col = Column::new("age", "int", -1, "", false);
     println!("the ddl col string is {}.", age_col.to_ddl_string());
     map.insert(age_col.name.clone(), age_col);
-
+    
+    let id_col = Column::new("id", "serial", -1, "", false);
+    map.insert(id_col.name.clone(), id_col);
 
 	let table = Table {
 		name:"test".to_string(),
