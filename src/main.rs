@@ -22,6 +22,14 @@ impl DbCenter for MyDbCenter {
         println!("{}", sql);
         let stmt = self.conn.prepare(&sql).unwrap();
         let rows = stmt.query(&[]).unwrap();
+        let columns = rows.columns();
+        for column in columns {
+            println!("the column name is {}.", column.name());
+        } 
+        println!("the effected rows is {}.", rows.len());
+        for row in &rows {
+
+        }
         println!("the result is {:?}", rows);
         Json::from_str("{\"$set\":{\"name\":\"123\"}, \"$inc\":{\"age\":10}}").unwrap()    
     }
