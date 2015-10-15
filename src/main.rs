@@ -7,9 +7,11 @@ use std::collections::BTreeMap;
 
 extern crate rustc_serialize;
 use rustc_serialize::json::Json;
+use rustc_serialize::json::ToJson;
 
 extern crate postgres;
 use postgres::{Connection, SslMode};
+use postgres::types::Type;
 
 struct MyDbCenter {
     name:String,    
@@ -22,16 +24,33 @@ impl DbCenter for MyDbCenter {
         println!("{}", sql);
         let stmt = self.conn.prepare(&sql).unwrap();
         let rows = stmt.query(&[]).unwrap();
-        let columns = rows.columns();
-        for column in columns {
-            println!("the column name is {}.", column.name());
-        } 
-        println!("the effected rows is {}.", rows.len());
+        let mut back_obj = BTreeMap::new();
+        let mut data:Vec<Json> = Vec::new();
         for row in &rows {
-
+            let mut row_map = BTreeMap::new();
+            let columns = row.columns();
+            for column in columns {
+                let name = column.name();
+                match *column.type_() {
+                    Type::Int4 => {
+                        let value:i32 = row.get(name);
+                        row_map.insert(name.to_string(), value.to_json());
+                    }, 
+                    Type::Int8 => {
+                        let value:i64 = row.get(name);
+                        row_map.insert(name.to_string(), value.to_json());
+                    },
+                    _ => {
+                        let value:String = row.get(name);
+                        row_map.insert(name.to_string(), value.to_json());
+                    },
+                }
+            }
+            data.push(row_map.to_json());
         }
-        println!("the result is {:?}", rows);
-        Json::from_str("{\"$set\":{\"name\":\"123\"}, \"$inc\":{\"age\":10}}").unwrap()    
+        back_obj.insert("data".to_string(), data.to_json());
+        back_obj.insert("rows".to_string(), rows.len().to_json());
+        back_obj.to_json()
     }
 
 }
@@ -101,7 +120,8 @@ fn main()
     
     let count_data = Json::from_str("{}").unwrap();
     let count_options = Json::from_str("{}").unwrap();
-    table.count(&count_data, &count_options);
+    let count_back = table.count(&count_data, &count_options);
+    println!("the count back is {}.", count_back);
     
     let fd_cond = Json::from_str("{\"name\":\"123\"}").unwrap();
     let fd_data = Json::from_str("{}").unwrap();
