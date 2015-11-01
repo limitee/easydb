@@ -7,7 +7,7 @@ extern crate regex;
 use regex::Regex;
 
 
-pub trait DbCenter {
+pub trait DbPool {
     fn execute(&self, sql:&str) -> Json;
 }    
 
@@ -149,11 +149,20 @@ impl Column {
  */
 pub struct Table<'a, T:'a> {
     pub name:String,    //表名
-    pub col_list:BTreeMap<String, Column>,
-    pub dc:&'a T,
+    pub col_list:BTreeMap<String, Column>,  //列的列表
+    pub dc:&'a T,   //data center
 }
 
-impl<'a, T:DbCenter> Table<'a, T> {
+impl<'a, T:DbPool> Table<'a, T> {
+
+    pub fn new(name:&str, col_list:BTreeMap<String, Column>, dc:&'a T) -> Table<'a, T>
+    {
+        Table {
+            name:name.to_string(),
+            col_list:col_list,
+            dc:dc,
+        }
+    }
 
     /**
      * 获得表的ddl语句
@@ -398,6 +407,16 @@ impl<'a, T:DbCenter> Table<'a, T> {
         }
         sql = sql + &self.get_options(options);
         self.dc.execute(&sql)
+    }
+
+    /**
+     * sql的select语句
+     */
+    pub fn find_by_str(&self, cond:&str, data:&str, options:&str) -> Json {
+        let fd_cond = Json::from_str(cond).unwrap();
+        let fd_data = Json::from_str(data).unwrap();
+        let fd_options = Json::from_str(options).unwrap();
+        self.find(&fd_cond, &fd_data, &fd_options)
     }
     
     /**

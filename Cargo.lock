@@ -2,7 +2,7 @@
 name = "easydb"
 version = "0.0.1"
 dependencies = [
- "postgres 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "postgres 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -94,12 +94,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "postgres"
-version = "0.9.6"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bufstream 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "debug-builders 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "phf 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "phf_codegen 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)",
