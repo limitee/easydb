@@ -85,12 +85,12 @@ impl DbPool for MyDbPool {
 pub struct DataBase<T> {
     pub name:String,
     pub table_list:BTreeMap<String, Table<T>>,
-    pub dc:Rc<T>,   //data center
+    pub dc:Arc<T>,   //data center
 }
 
 impl<T:DbPool> DataBase<T> {
 
-    fn get_test_table(dc:Rc<T>) -> Table<T>
+    fn get_test_table(dc:Arc<T>) -> Table<T>
     {
         let mut map = BTreeMap::new();
         let col = Column::new("name", "varchar", 40, "not null", true);
@@ -106,7 +106,7 @@ impl<T:DbPool> DataBase<T> {
         Table::new("test", map, dc)
     }
 
-    fn get_blog_table(dc:Rc<T>) -> Table<T>
+    fn get_blog_table(dc:Arc<T>) -> Table<T>
     {
         let mut map = BTreeMap::new();
         let id_col = Column::new("id", "serial", -1, "", false);
@@ -118,7 +118,7 @@ impl<T:DbPool> DataBase<T> {
         Table::new("blog", map, dc)
     }
 
-    pub fn new(name:&str, dc:Rc<T>) -> DataBase<T>
+    pub fn new(name:&str, dc:Arc<T>) -> DataBase<T>
     {
         let mut table_list = BTreeMap::new();
 
@@ -150,7 +150,7 @@ fn main()
 
     let dsn = "postgresql://postgres:1988lm@localhost/test";
     let my_dc:MyDbPool = MyDbPool::new(dsn, 10);
-    let my_db = DataBase::new("main", Rc::new(my_dc));
+    let my_db = DataBase::new("main", Arc::new(my_dc));
     let test_table = my_db.get_table("test").expect("table not exists.");
 
     let fd_back = test_table.find_by_str("{}", "{}", "{}");

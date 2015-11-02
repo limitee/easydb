@@ -7,6 +7,7 @@ extern crate regex;
 use regex::Regex;
 
 use std::rc::{Rc};
+use std::sync::Arc;
 
 pub trait DbPool {
     fn execute(&self, sql:&str) -> Json;
@@ -151,12 +152,12 @@ impl Column {
 pub struct Table<T> {
     pub name:String,    //表名
     pub col_list:BTreeMap<String, Column>,  //列的列表
-    pub dc:Rc<T>,   //data center
+    pub dc:Arc<T>,   //data center
 }
 
 impl<T:DbPool> Table<T> {
 
-    pub fn new(name:&str, col_list:BTreeMap<String, Column>, dc:Rc<T>) -> Table<T>
+    pub fn new(name:&str, col_list:BTreeMap<String, Column>, dc:Arc<T>) -> Table<T>
     {
         Table {
             name:name.to_string(),
