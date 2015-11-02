@@ -6,6 +6,7 @@ use rustc_serialize::json::Json;
 extern crate regex;
 use regex::Regex;
 
+use std::rc::{Rc};
 
 pub trait DbPool {
     fn execute(&self, sql:&str) -> Json;
@@ -147,15 +148,15 @@ impl Column {
 /**
  * 数据库的表
  */
-pub struct Table<'a, T:'a> {
+pub struct Table<T> {
     pub name:String,    //表名
     pub col_list:BTreeMap<String, Column>,  //列的列表
-    pub dc:&'a T,   //data center
+    pub dc:Rc<T>,   //data center
 }
 
-impl<'a, T:DbPool> Table<'a, T> {
+impl<T:DbPool> Table<T> {
 
-    pub fn new(name:&str, col_list:BTreeMap<String, Column>, dc:&'a T) -> Table<'a, T>
+    pub fn new(name:&str, col_list:BTreeMap<String, Column>, dc:Rc<T>) -> Table<T>
     {
         Table {
             name:name.to_string(),

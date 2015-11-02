@@ -1,4 +1,5 @@
 use std::thread;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 extern crate easydb;
@@ -81,15 +82,15 @@ impl DbPool for MyDbPool {
 
 }
 
-pub struct DataBase<'a, T:'a> {
+pub struct DataBase<T> {
     pub name:String,
-    pub table_list:BTreeMap<String, Table<'a, T>>,
-    pub dc:&'a T,   //data center
+    pub table_list:BTreeMap<String, Table<T>>,
+    pub dc:Rc<T>,   //data center
 }
 
-impl<'a, T:DbPool> DataBase<'a, T> {
+impl<T:DbPool> DataBase<T> {
 
-    fn get_test_table(dc:&'a T) -> Table<'a, T>
+    fn get_test_table(dc:Rc<T>) -> Table<T>
     {
         let mut map = BTreeMap::new();
         let col = Column::new("name", "varchar", 40, "not null", true);
@@ -105,7 +106,7 @@ impl<'a, T:DbPool> DataBase<'a, T> {
         Table::new("test", map, dc)
     }
 
-    fn get_blog_table(dc:&'a T) -> Table<'a, T>
+    fn get_blog_table(dc:Rc<T>) -> Table<T>
     {
         let mut map = BTreeMap::new();
         let id_col = Column::new("id", "serial", -1, "", false);
@@ -117,15 +118,15 @@ impl<'a, T:DbPool> DataBase<'a, T> {
         Table::new("blog", map, dc)
     }
 
-    pub fn new(name:&str, dc:&'a T) -> DataBase<'a, T>
+    pub fn new(name:&str, dc:Rc<T>) -> DataBase<T>
     {
         let mut table_list = BTreeMap::new();
 
-        let test_table = DataBase::get_test_table(dc);
+        let test_table = DataBase::get_test_table(dc.clone());
         println!("{}", test_table.to_ddl_string());
         table_list.insert(test_table.name.clone(), test_table);
 
-        let blog_table = DataBase::get_blog_table(dc);
+        let blog_table = DataBase::get_blog_table(dc.clone());
         println!("{}", blog_table.to_ddl_string());
         table_list.insert(blog_table.name.clone(), blog_table);
 
@@ -149,7 +150,7 @@ fn main()
 
     let dsn = "postgresql://postgres:1988lm@localhost/test";
     let my_dc:MyDbPool = MyDbPool::new(dsn, 10);
-    let my_db = DataBase::new("main", &my_dc);
+    let my_db = DataBase::new("main", Rc::new(my_dc));
     let test_table = my_db.get_table("test").expect("table not exists.");
 
     let fd_back = test_table.find_by_str("{}", "{}", "{}");
