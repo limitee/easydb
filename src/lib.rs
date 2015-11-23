@@ -421,6 +421,11 @@ impl<T:DbPool> Table<T> {
         self.find(&fd_cond, &fd_data, &fd_options)
     }
     
+    pub fn save_by_str(&self, data:&str, options:&str) -> Json {
+        let j_data = Json::from_str(data).unwrap();
+        let j_op = Json::from_str(options).unwrap();
+        self.save(&j_data, &j_op)
+    }
     /**
      * 保存数据到数据库
      */
