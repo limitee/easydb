@@ -282,7 +282,7 @@ impl<T:DbPool> Table<T> {
                 }
             }
         }
-        println!("the ret is {}.", ret);
+        //println!("the ret is {}.", ret);
         ret
     }
 
