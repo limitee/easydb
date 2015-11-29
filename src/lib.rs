@@ -426,6 +426,25 @@ impl<T:DbPool> Table<T> {
         let j_op = Json::from_str(options).unwrap();
         self.save(&j_data, &j_op)
     }
+
+    pub fn update_by_str(&self, cond:&str, data:&str, options:&str) -> Json {
+        let p_cond = Json::from_str(cond).unwrap();
+        let p_data = Json::from_str(data).unwrap();
+        let p_op = Json::from_str(options).unwrap();
+        self.update(&p_cond, &p_data, &p_op)
+    }
+
+    pub fn update(&self, cond:&Json, data:&Json, options:&Json) -> Json {
+        let mut sql:String = "update ".to_string() + &self.name + " set ";
+        sql = sql + &(self.get_update_str(data));
+        let cond:String = self.condition(cond, "");
+        if cond.len() > 0 {
+            sql = sql + " where " + &cond;
+        }
+        sql = sql + &self.get_options(options);
+        self.dc.execute(&sql)
+    }
+
     /**
      * 保存数据到数据库
      */
