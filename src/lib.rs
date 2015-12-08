@@ -116,7 +116,7 @@ impl Column {
      */
     pub fn get_value(&self, value:&Json) -> String {
         let mut value_str = String::new();
-        if self.ctype == "integer" || self.ctype == "bigint" {
+        if self.ctype == "int" || self.ctype == "integer" || self.ctype == "bigint" {
             value_str = value.to_string(); 
         }
         else {
