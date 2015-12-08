@@ -411,6 +411,25 @@ impl<T:DbPool> Table<T> {
         self.dc.execute(&sql)
     }
 
+    pub fn find_one(&self, cond:&Json, data:&Json, options:&Json) -> Result<Json, i32> {
+        let rst = self.find(cond, data, options);
+        let rows = rst.find_path(&["rows"]).unwrap().as_i64().unwrap();
+        if rows > 0 {
+            let data_array = rst.find_path(&["data"]).unwrap().as_array().unwrap();
+            let data = data_array[0].clone();
+            return Result::Ok(data);
+        } else {
+            return Result::Err(-1);
+        }
+    }
+
+    pub fn find_one_by_str(&self, cond:&str, data:&str, options:&str) -> Result<Json, i32> {
+        let fd_cond = Json::from_str(cond).unwrap();
+        let fd_data = Json::from_str(data).unwrap();
+        let fd_options = Json::from_str(options).unwrap();
+        self.find_one(&fd_cond, &fd_data, &fd_options)
+    }
+
     /**
      * sql的select语句
      */
