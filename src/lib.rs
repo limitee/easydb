@@ -372,16 +372,24 @@ impl<T:DbPool> Table<T> {
     /**
      * get count by the condition. 
      */
-    pub fn count(&self, data:&Json, options:&Json) -> Json {
+    pub fn count(&self, data:&Json, options:&Json) -> Result<Json, i32> {
         let mut sql:String = "select count(*) from ".to_string() + &self.name;
         let cond = self.condition(data, "");
         if cond.len() > 0 {
             sql = sql + " where " + &cond;
         }
         sql = sql + &self.get_options(options);
-        self.dc.execute(&sql) 
+        Result::Ok(self.dc.execute(&sql))
     }
 
+    /**
+     * get count by the condition str.
+     */
+    pub fn count_by_str(&self, data:&str, options:&str) -> Result<Json, i32> {
+        let c_data = Json::from_str(data).unwrap();
+        let c_options = Json::from_str(options).unwrap();
+        self.count(&c_data, &c_options)
+    }
     
     /**
      * sql的select语句
