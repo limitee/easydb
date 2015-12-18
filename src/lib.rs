@@ -93,7 +93,7 @@ impl Column {
     pub fn get_kv_pair<T:ToString>(&self, op:&str, value:T) -> String
     {
         let mut exp:String = self.name.clone() + " " + op + " ";
-        if self.ctype == "integer" || self.ctype == "bigint" {
+        if self.ctype == "integer" || self.ctype == "bigint" || self.ctype == "serial" || || self.ctype == "bigserial" {
             exp = exp + &value.to_string();
         }
         else if op == "in" {
