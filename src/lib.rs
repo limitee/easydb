@@ -501,14 +501,23 @@ impl<T:DbPool> Table<T> {
     /**
      * 删除符合条件的数据
      */
-    pub fn remove(&self, cond:&Json, options:&Json) -> Json {
+    pub fn remove(&self, cond:&Json, options:&Json) -> Result<Json, i32> {
         let mut sql:String = "delete from ".to_string() + &self.name;
         let cond:String = self.condition(cond, "");
         if cond.len() > 0 {
             sql = sql + " where " + &cond; 
         }
         sql = sql + &self.get_options(options);
-        self.dc.execute(&sql)
+        Result::Ok(self.dc.execute(&sql))
+    }
+
+    /**
+     * 删除符合条件的数据
+     */
+    pub fn remove_by_str(&self, cond:&str, options:&str) -> Result<Json, i32> {
+        let p_cond = Json::from_str(cond).unwrap();
+        let p_op = Json::from_str(options).unwrap();
+        self.remove(&p_cond, &p_op)
     }
 }
 
