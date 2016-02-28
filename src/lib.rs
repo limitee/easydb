@@ -215,18 +215,18 @@ impl<T:DbPool> Table<T> {
         };
         //limit属性是一个整数
         if let Some(x) = options_obj.get("limit") {
-            let limit = &x.as_i64().unwrap();
+            let limit = x.as_i64().unwrap();
             if limit > 0
             {
-                ret = ret + " limit " + limit.to_string();
+                ret = format!("{} limit {}", ret, limit);
             }
         };
         //offset属性是一个整数
         if let Some(x) = options_obj.get("offset") {
-            let offset = &x.as_i64().unwrap();
+            let offset = x.as_i64().unwrap();
             if offset > 0
             {
-                ret = ret + " offset " + offset.to_string();
+                ret = format!("{} offset {}", ret, offset);
             }
         };
         //ret定义更新时要返回的数据
