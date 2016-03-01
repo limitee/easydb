@@ -47,8 +47,32 @@ impl DbUtil {
      * escape字符串
      */
     pub fn escape(value:&str) -> String {
-        value.replace("'", "''")
-    }  
+        let mut escaped:String = String::new();
+        escaped.push('\'');
+        let mut hasBackslash = false;
+        for c in value.chars() {
+            if c == '\'' {
+                escaped.push(c);
+                escaped.push(c);
+            }
+            else if c == '\\' {
+                escaped.push(c);
+                escaped.push(c);
+                hasBackslash = true;
+            }
+            else {
+                escaped.push(c);
+            }
+        }
+        escaped.push('\'');
+
+        if hasBackslash {
+            format!(" E{}", escaped)
+        }
+        else {
+            escaped
+        }
+    }
 
 }
 
