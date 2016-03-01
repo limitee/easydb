@@ -7,3 +7,7 @@ authors = ["liming <liming@admaster.com.cn>"]
 rustc-serialize = "0.3.16"
 regex = "0.1.41"
 postgres = "0.10.0"
+
+easy_util = {version="0.0.1", path="../easy_util"}
+
+

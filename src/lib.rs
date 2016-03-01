@@ -1,7 +1,11 @@
 use std::collections::BTreeMap;
 
+#[macro_use]
+extern crate easy_util;
 extern crate rustc_serialize;
 use rustc_serialize::json::Json;
+use rustc_serialize::json::ToJson;
+use std::str::FromStr;
 
 extern crate regex;
 use regex::Regex;
@@ -10,8 +14,8 @@ use std::rc::{Rc};
 use std::sync::Arc;
 
 pub trait DbPool {
-    fn execute(&self, sql:&str) -> Json;
-}    
+    fn execute(&self, sql:&str) -> Result<Json, i32>;
+}
 
 
 /**
@@ -126,7 +130,7 @@ impl Column {
         else {
             //TODO escape
             if self.escape {
-                exp = exp + "'" + &DbUtil::escape(&value.to_string()) + "'";
+                exp = exp + &DbUtil::escape(&value.to_string());
             }
             else {
                 exp = exp + "'" + &value.to_string() + "'";
@@ -145,7 +149,7 @@ impl Column {
         }
         else {
             if self.escape {
-                value_str = "'".to_string() + &DbUtil::escape(&DbUtil::get_pure_json_string(value)) + "'";
+                value_str = DbUtil::escape(&DbUtil::get_pure_json_string(value));
             }
             else {
                 value_str = "'".to_string() + &DbUtil::get_pure_json_string(value) + "'";
@@ -411,7 +415,7 @@ impl<T:DbPool> Table<T> {
             sql = sql + " where " + &cond;
         }
         sql = sql + &self.get_options(options);
-        Result::Ok(self.dc.execute(&sql))
+        self.dc.execute(&sql)
     }
 
     /**
@@ -427,7 +431,7 @@ impl<T:DbPool> Table<T> {
      * sql的select语句
      *
      */
-    pub fn find(&self, cond:&Json, data:&Json, options:&Json) -> Json {
+    pub fn find(&self, cond:&Json, data:&Json, options:&Json) -> Result<Json, i32> {
         let mut sql:String = "select ".to_string();
         let mut key_str:String = String::new();
         let columns = data.as_object().unwrap();
@@ -452,12 +456,11 @@ impl<T:DbPool> Table<T> {
     }
 
     pub fn find_one(&self, cond:&Json, data:&Json, options:&Json) -> Result<Json, i32> {
-        let rst = self.find(cond, data, options);
-        let rows = rst.find_path(&["rows"]).unwrap().as_i64().unwrap();
+        let rst = try!(self.find(cond, data, options));
+        let rows = json_i64!(&rst; "rows");
         if rows > 0 {
-            let data_array = rst.find_path(&["data"]).unwrap().as_array().unwrap();
-            let data = data_array[0].clone();
-            return Result::Ok(data);
+            let ref_data = json_path!(&rst; "data", "0");
+            return Result::Ok(ref_data.clone());
         } else {
             return Result::Err(-1);
         }
@@ -473,27 +476,27 @@ impl<T:DbPool> Table<T> {
     /**
      * sql的select语句
      */
-    pub fn find_by_str(&self, cond:&str, data:&str, options:&str) -> Json {
+    pub fn find_by_str(&self, cond:&str, data:&str, options:&str) -> Result<Json, i32> {
         let fd_cond = Json::from_str(cond).unwrap();
         let fd_data = Json::from_str(data).unwrap();
         let fd_options = Json::from_str(options).unwrap();
         self.find(&fd_cond, &fd_data, &fd_options)
     }
     
-    pub fn save_by_str(&self, data:&str, options:&str) -> Json {
+    pub fn save_by_str(&self, data:&str, options:&str) -> Result<Json, i32> {
         let j_data = Json::from_str(data).unwrap();
         let j_op = Json::from_str(options).unwrap();
         self.save(&j_data, &j_op)
     }
 
-    pub fn update_by_str(&self, cond:&str, data:&str, options:&str) -> Json {
+    pub fn update_by_str(&self, cond:&str, data:&str, options:&str) -> Result<Json, i32> {
         let p_cond = Json::from_str(cond).unwrap();
         let p_data = Json::from_str(data).unwrap();
         let p_op = Json::from_str(options).unwrap();
         self.update(&p_cond, &p_data, &p_op)
     }
 
-    pub fn update(&self, cond:&Json, data:&Json, options:&Json) -> Json {
+    pub fn update(&self, cond:&Json, data:&Json, options:&Json) -> Result<Json, i32> {
         let mut sql:String = "update ".to_string() + &self.name + " set ";
         sql = sql + &(self.get_update_str(data));
         let cond:String = self.condition(cond, "");
@@ -507,7 +510,7 @@ impl<T:DbPool> Table<T> {
     /**
      * 保存数据到数据库
      */
-    pub fn save(&self, data:&Json, options:&Json) -> Json {
+    pub fn save(&self, data:&Json, options:&Json) -> Result<Json, i32> {
         let mut sql:String = "insert into ".to_string() + &self.name + " (";
         let data_obj = data.as_object().unwrap();
         let mut data_obj_key_count:i32 = 0;
@@ -540,7 +543,7 @@ impl<T:DbPool> Table<T> {
             sql = sql + " where " + &cond; 
         }
         sql = sql + &self.get_options(options);
-        Result::Ok(self.dc.execute(&sql))
+        self.dc.execute(&sql)
     }
 
     /**
