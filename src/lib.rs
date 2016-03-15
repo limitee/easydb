@@ -13,8 +13,16 @@ use regex::Regex;
 use std::rc::{Rc};
 use std::sync::Arc;
 
+extern crate postgres;
+use postgres::{Connection};
+
 pub trait DbPool {
     fn execute(&self, sql:&str) -> Result<Json, i32>;
+
+    /**
+     * 获得一个新的连接
+     */
+    fn get_connection(&self) -> Result<Connection, i32>;
 }
 
 
@@ -128,7 +136,6 @@ impl Column {
             exp = exp + &value.to_string();
         }
         else {
-            //TODO escape
             if self.escape {
                 exp = exp + &DbUtil::escape(&value.to_string());
             }
