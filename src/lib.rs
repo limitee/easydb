@@ -332,6 +332,50 @@ impl<T:DbPool> Table<T> {
         ret
     }
 
+    /**
+     * 获得更新的sql
+     */
+    pub fn get_upsert_str(&self, data:&Json) -> String {
+        let mut ret:String = "".to_string();
+        let re = Regex::new(r"\$([a-z]+)").unwrap();
+        let data_obj = data.as_object().unwrap();
+        let mut set_count:i32 = 0;
+        for (key, value) in data_obj.iter() {
+            let iter = re.captures_iter(key);
+            if let Some(x) = iter.last() {
+                let key:&str = x.at(1).unwrap_or("");
+                if key == "set" {
+                    let set_obj = (&value).as_object().unwrap();
+                    for (set_key, set_value) in set_obj.iter() {
+                        if set_count > 0 {
+                            ret = ret + ",";
+                        }
+                        let col_option:Option<&Column> = self.col_list.get(set_key);
+                        if col_option.is_some() {
+                            let col = col_option.unwrap();
+                            ret = ret + &col.get_kv_pair("=", DbUtil::get_pure_json_string(&set_value));
+                            set_count = set_count + 1;
+                        }
+                    }
+                }
+                else if key == "inc" {
+                    let inc_obj = (&value).as_object().unwrap();
+                    for (inc_key, inc_value) in inc_obj.iter() {
+                        if set_count > 0 {
+                            ret = ret + ",";
+                        }
+                        let col_option:Option<&Column> = self.col_list.get(inc_key);
+                        if col_option.is_some() {
+                            ret = ret + inc_key + " = " + &self.name + "." + inc_key + " + " + &inc_value.to_string();
+                            set_count = set_count + 1;
+                        }
+                    }
+                }
+            }
+        }
+        //println!("the ret is {}.", ret);
+        ret
+    }
 
     /**
      * 获得data条件所表示的sql的where条件字符串
@@ -514,6 +558,47 @@ impl<T:DbPool> Table<T> {
             sql = sql + " where " + &cond;
         }
         sql = sql + &self.get_options(options);
+        self.dc.execute(&sql)
+    }
+
+    pub fn upsert(&self, conflict:&Json, data:&Json, up_data:&Json, options:&Json) -> Result<Json, i32> {
+        let mut sql:String = "insert into ".to_string() + &self.name + " (";
+        let data_obj = data.as_object().unwrap();
+        let mut data_obj_key_count:i32 = 0;
+        let mut key_str:String = String::new();
+        let mut value_str:String = String::new();
+        for (key, value) in data_obj.iter() {
+            let col_option:Option<&Column> = self.col_list.get(key);
+            if col_option.is_some() {
+                let col:&Column = col_option.unwrap();
+                if data_obj_key_count > 0 {
+                    key_str = key_str + ",";
+                    value_str = value_str + ",";
+                }
+                key_str = key_str + key;
+                value_str = value_str + &col.get_value(value);
+                data_obj_key_count = data_obj_key_count + 1;
+            }
+        }
+        sql = sql + &key_str + ") values (" + &value_str + ")" + &self.get_options(options);
+
+        //define conflict keys
+        let mut data_obj_key_count:i32 = 0;
+        let mut key_str:String = String::new();
+        for (key, _) in conflict.as_object().unwrap().iter() {
+            let col_option:Option<&Column> = self.col_list.get(key);
+            if col_option.is_some() {
+                let col:&Column = col_option.unwrap();
+                if data_obj_key_count > 0 {
+                    key_str = key_str + ",";
+                }
+                key_str = key_str + key;
+                data_obj_key_count = data_obj_key_count + 1;
+            }
+        }
+        sql = sql + " ON CONFLICT (" + &key_str + ") DO UPDATE SET ";
+        sql = sql + &(self.get_upsert_str(up_data));
+
         self.dc.execute(&sql)
     }
 
