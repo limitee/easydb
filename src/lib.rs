@@ -16,6 +16,9 @@ use std::sync::Arc;
 extern crate postgres;
 use postgres::{Connection};
 
+#[macro_use]
+extern crate log;
+
 pub trait DbPool {
     fn execute(&self, sql:&str) -> Result<Json, i32>;
 
