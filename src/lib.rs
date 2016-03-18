@@ -26,6 +26,8 @@ pub trait DbPool {
      * 获得一个新的连接
      */
     fn get_connection(&self) -> Result<Connection, i32>;
+
+    fn stream<F>(&self, sql:&str, mut f:F) -> Result<i32, i32> where F:FnMut(Json) -> bool + 'static;
 }
 
 
