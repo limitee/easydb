@@ -36,7 +36,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "easy_util"
 version = "0.0.1"
-source = "git+https://limitee:20131988lm@github.com/limitee/easy_util.git#def1bf78ca9a1988f7796b243daab984b1634350"
+source = "git+https://limitee:20131988lm@github.com/limitee/easy_util.git#7d5fc36e82ab42325f985c9ec69e29df7a6e5000"
 dependencies = [
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
