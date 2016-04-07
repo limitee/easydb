@@ -10,6 +10,6 @@ postgres = "0.11.6"
 rand = "0.3.11"
 log = "0.3.5"
 
-easy_util = {version="0.0.1", path="../easy_util"}
+easy_util = {git = "https://limitee:20131988lm@github.com/limitee/easy_util.git"}
 
 
