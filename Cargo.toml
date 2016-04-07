@@ -6,7 +6,7 @@ authors = ["liming <liming@admaster.com.cn>"]
 [dependencies]
 rustc-serialize = "0.3.16"
 regex = "0.1.41"
-postgres = "0.11.3"
+postgres = "0.11.6"
 rand = "0.3.11"
 log = "0.3.5"
 
