@@ -399,7 +399,17 @@ impl<T:DbPool> Table<T> {
             if let Some(x) = iter.last() {
                 let mut exp:String = "(".to_string();
                 let key:&str = x.at(1).unwrap_or("");
-                if parent_col_option.is_some() {
+                if key == "or" {
+                    let or_data_array:&Vec<Json> = value.as_array().unwrap();
+                    let mut or_count:i32 = 0;
+                    for or_json in or_data_array {
+                        if or_count > 0 {
+                            exp = exp + " or ";
+                        }
+                        exp = exp + &self.condition(or_json, "");
+                        or_count = or_count + 1;
+                    }
+                } else if parent_col_option.is_some() {
                     let parent_col:&Column = parent_col_option.unwrap();
                     if key == "gt" {
                         exp = exp + &parent_col.get_kv_pair(">", DbUtil::get_pure_json_string(&value)); 
@@ -415,17 +425,6 @@ impl<T:DbPool> Table<T> {
                     }
                     else if key == "ne" {
                         exp = exp + &parent_col.get_kv_pair("!=", DbUtil::get_pure_json_string(&value)); 
-                    }
-                    else if key == "or" {
-                        let or_data_array:&Vec<Json> = value.as_array().unwrap(); 
-                        let mut or_count:i32 = 0;
-                        for or_json in or_data_array {
-                            if or_count > 0 {
-                                exp = exp + " or ";
-                            }
-                            exp = exp + &self.condition(or_json, "");    
-                            or_count = or_count + 1;
-                        }
                     }
                     else if key == "in" {
                         let in_data_array:&Vec<Json> = value.as_array().unwrap();

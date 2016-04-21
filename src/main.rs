@@ -244,6 +244,8 @@ impl<T:DbPool> DataBase<T> {
     fn get_test_table(dc:Arc<T>) -> Table<T>
     {
         let mut map = BTreeMap::new();
+        let col = Column::new("id", "bigserial", -1, "not null", true);
+        map.insert(col.name.clone(), col);
         let col = Column::new("name", "varchar", 40, "not null", true);
         map.insert(col.name.clone(), col);
         let pass_col = Column::new("password", "varchar", 40, "not null", false);
@@ -311,6 +313,14 @@ fn main()
         println!("{}", set);
         true
     });
+
+    let my_db = DataBase::new("main", Arc::new(my_dc));
+    let table = my_db.get_table("test").expect("table not exists.");
+    let cdata = Json::from_str("{\"$or\":[{\"id\":1},{\"name\":\"123\"}],\"id\":2}").unwrap();
+    let doc = Json::from_str("{}").unwrap();
+    let op = Json::from_str("{}").unwrap();
+    let rst = table.find_one(&cdata, &doc, &op);
+	//println!("the condition is {}", );
 
     /*
     let my_db = DataBase::new("main", Arc::new(my_dc));
