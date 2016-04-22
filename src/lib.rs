@@ -429,7 +429,7 @@ impl<T:DbPool> Table<T> {
                     else if key == "in" {
                         let in_data_array:&Vec<Json> = value.as_array().unwrap();
                         let mut in_count:i32 = 0;
-                        let mut in_string:String = "".to_string();
+                        let mut in_string:String = "(".to_string();
                         for in_json in in_data_array {
                             if in_count > 0 {
                                 in_string = in_string + ",";
@@ -437,6 +437,7 @@ impl<T:DbPool> Table<T> {
                             in_string = in_string + &DbUtil::get_sql_string(in_json);
                             in_count = in_count + 1;
                         }
+                        in_string.push_str(")");
                         exp = exp + &parent_col.get_kv_pair("in", in_string);
                     }
                 }
