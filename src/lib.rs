@@ -152,6 +152,34 @@ impl Column {
     }
 
     /**
+     * 把键值对转换成sql表达式
+     */
+    pub fn get_kv_pair_with_alias<T:ToString>(&self, op:&str, value:T, alias_op:Option<&str>) -> String
+    {
+        let mut exp:String;
+        if let Some(alias_name) = alias_op {
+            exp = alias_name.to_string() + "." + &self.name + " " + op + " ";
+        } else {
+            exp = self.name.clone() + " " + op + " ";
+        }
+        if self.ctype == "integer" || self.ctype == "bigint" || self.ctype == "serial" || self.ctype == "bigserial" || self.ctype == "int" {
+            exp = exp + &value.to_string();
+        }
+        else if op == "in" {
+            exp = exp + &value.to_string();
+        }
+        else {
+            if self.escape {
+                exp = exp + &DbUtil::escape(&value.to_string());
+            }
+            else {
+                exp = exp + "'" + &value.to_string() + "'";
+            }
+        }
+        exp
+    }
+
+    /**
      * 获得column对应的值
      */
     pub fn get_value(&self, value:&Json) -> String {
@@ -391,10 +419,7 @@ impl<T:DbPool> Table<T> {
         ret
     }
 
-    /**
-     * 获得data条件所表示的sql的where条件字符串
-     */
-    pub fn condition(&self, data:&Json, parent_col_name:&str) -> String {
+    pub fn get_cond(&self, data:&Json, parent_col_name:&str, alias_op:Option<&str>) -> String {
         let parent_col_option:Option<&Column> = self.col_list.get(parent_col_name);
         let mut ret:String = "".to_string();
         let mut count:u32 = 0;
@@ -418,25 +443,25 @@ impl<T:DbPool> Table<T> {
                         if or_count > 0 {
                             exp = exp + " or ";
                         }
-                        exp = exp + &self.condition(or_json, "");
+                        exp = exp + &self.get_cond(or_json, "", alias_op);
                         or_count = or_count + 1;
                     }
                 } else if parent_col_option.is_some() {
                     let parent_col:&Column = parent_col_option.unwrap();
                     if key == "gt" {
-                        exp = exp + &parent_col.get_kv_pair(">", DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair_with_alias(">", DbUtil::get_pure_json_string(&value), alias_op); 
                     }
                     else if key == "gte" {
-                        exp = exp + &parent_col.get_kv_pair(">=", DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair_with_alias(">=", DbUtil::get_pure_json_string(&value), alias_op); 
                     }
                     else if key == "lt" {
-                        exp = exp + &parent_col.get_kv_pair("<", DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair_with_alias("<", DbUtil::get_pure_json_string(&value), alias_op); 
                     }
                     else if key == "lte" {
-                        exp = exp + &parent_col.get_kv_pair("<=", DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair_with_alias("<=", DbUtil::get_pure_json_string(&value), alias_op); 
                     }
                     else if key == "ne" {
-                        exp = exp + &parent_col.get_kv_pair("!=", DbUtil::get_pure_json_string(&value)); 
+                        exp = exp + &parent_col.get_kv_pair_with_alias("!=", DbUtil::get_pure_json_string(&value), alias_op); 
                     }
                     else if key == "in" {
                         let in_data_array:&Vec<Json> = value.as_array().unwrap();
@@ -450,18 +475,18 @@ impl<T:DbPool> Table<T> {
                             in_count = in_count + 1;
                         }
                         in_string.push_str(")");
-                        exp = exp + &parent_col.get_kv_pair("in", in_string);
+                        exp = exp + &parent_col.get_kv_pair_with_alias("in", in_string, alias_op);
                     }
                 }
                 ret = ret + &exp + ")";
             }
-            else { //未匹配上，值是object，递归调用condition，否则，组成kv字符串
+            else { //未匹配上，值是object，递归调用get_cond，否则，组成kv字符串
                 let mut kv:String = "(".to_string();
-                if value.is_object() {  //值是一个对象,递归调用condition方法
-                    kv = kv + &self.condition(&value, key);         
+                if value.is_object() {  //值是一个对象,递归调用get_cond方法
+                    kv = kv + &self.get_cond(&value, key, alias_op);         
                 } else {
                     if let Some(x) = self.col_list.get(key) {
-                        kv = kv + &x.get_kv_pair("=", DbUtil::get_pure_json_string(&value));
+                        kv = kv + &x.get_kv_pair_with_alias("=", DbUtil::get_pure_json_string(&value), alias_op);
                     }
                 }
                 ret = ret + &kv + ")";
@@ -469,8 +494,14 @@ impl<T:DbPool> Table<T> {
 
             count = count + 1;
         }
-        //println!("the parent col is {}.", parent_col.to_ddl_string());
         ret
+    }
+
+    /**
+     * 获得data条件所表示的sql的where条件字符串
+     */
+    pub fn condition(&self, data:&Json, parent_col_name:&str) -> String {
+        self.get_cond(data, parent_col_name, None)
     }
 
     /**
