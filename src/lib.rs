@@ -223,6 +223,68 @@ impl<T:DbPool> Table<T> {
         str
     }
 
+    pub fn get_option(&self, options;&Json, alias_name:&str) -> String {
+        let mut ret:String = "".to_string();
+        let options_obj = options.as_object().unwrap();
+        //sort属性必须对应一个数组，如[{\"a\":1},{\"b\":-1}]
+        if let Some(x) = options_obj.get("sort") {
+            let sort_obj = x.as_array().unwrap();
+            let length = sort_obj.len();
+            for x in 0..length {
+                let sort_obj_tmp = sort_obj[x].as_object().unwrap();
+                if x > 0 {
+                    ret = ret + ", ";
+                }
+                else
+                {
+                    ret = ret + " order by ";
+                }
+                for (key, value) in sort_obj_tmp.iter() {
+                    ret = ret + alias_name + "." + key;
+                    if value.as_i64().unwrap() > 0 {
+                        ret = ret + " asc";
+                    }
+                    else {
+                        ret = ret + " desc";
+                    }
+                }
+            }
+        };
+        //limit属性是一个整数
+        if let Some(x) = options_obj.get("limit") {
+            let limit = x.as_i64().unwrap();
+            if limit > 0
+            {
+                ret = format!("{} limit {}", ret, limit);
+            }
+        };
+        //offset属性是一个整数
+        if let Some(x) = options_obj.get("offset") {
+            let offset = x.as_i64().unwrap();
+            if offset > 0
+            {
+                ret = format!("{} offset {}", ret, offset);
+            }
+        };
+        //ret定义更新时要返回的数据
+        if let Some(x) = options_obj.get("ret") {
+            let ret_obj = x.as_object().unwrap();
+            let mut count = 0;
+            for (key, _) in ret_obj.iter() {
+                if count > 0 {
+                    ret = ret + ", ";
+                }
+                else
+                {
+                    ret = ret + " returning ";
+                }
+                ret = ret + alias_name + "." + key;
+                count = count + 1;
+            }
+        };
+        ret
+    }
+
     /**
      * 获得附加参数的字符串表达形式
      */
