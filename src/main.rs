@@ -23,6 +23,59 @@ use postgres::types::Type;
 extern crate rand;
 use rand::distributions::{IndependentSample, Range};
 
+///convert the postgres rows to json
+pub fn rows_to_json(rows:postgres::rows::Rows) -> Json {
+    let mut rst_json = json!("{}");
+    let mut data:Vec<Json> = Vec::new();
+    for row in &rows {
+        let mut back_json = json!("{}");
+        let columns = row.columns();
+        for column in columns {
+            let name = column.name();
+            let col_type = column.type_();
+            match *col_type {
+                Type::Int4 => {
+                    let op:Option<postgres::Result<i32>> = row.get_opt(name);
+                    let mut true_value:i32 = 0;
+                    if let Some(rst) = op {
+                        if let Ok(value) = rst {
+                            true_value = value;
+                        }
+                    }
+                    json_set!(&mut back_json; name; true_value);
+                },
+                Type::Int8 => {
+                    let op:Option<postgres::Result<i64>> = row.get_opt(name);
+                    let mut true_value:i64 = 0;
+                    if let Some(rst) = op {
+                        if let Ok(value) = rst {
+                            true_value = value;
+                        }
+                    }
+                    json_set!(back_json; name; true_value);
+                },
+                Type::Varchar | Type::Text => {
+                    let op:Option<postgres::Result<String>> = row.get_opt(name);
+                    let mut true_value:String = String::new();
+                    if let Some(rst) = op {
+                        if let Ok(value) = rst {
+                            true_value = value;
+                        }
+                    }
+                    json_set!(back_json; name; true_value);
+                },
+                _ => {
+                    println!("ignore type:{}", col_type.name());
+                },
+            }
+        }
+        data.push(back_json);
+    }
+    json_set!(&mut rst_json; "data"; data);
+    json_set!(&mut rst_json; "rows"; rows.len());
+    rst_json
+}
+
 pub struct MyDbPool {
     dsn:String,
     conns:Vec<Mutex<Connection>>,
@@ -56,40 +109,7 @@ impl MyDbPool {
     }
 
     pub fn get_back_json(&self, rows:postgres::rows::Rows) -> Json {
-        let mut rst_json = json!("{}");
-        let mut data:Vec<Json> = Vec::new();
-        for row in &rows {
-            let mut back_json = json!("{}");
-            let columns = row.columns();
-            for column in columns {
-                let name = column.name();
-                match *column.type_() {
-                    Type::Int4 => {
-                        let value:i32 = row.get(name);
-                        json_set!(&mut back_json; name; value);
-                    },
-                    Type::Int8 => {
-                        let value:i64 = row.get(name);
-                        json_set!(&mut back_json; name; value);
-                    },
-                    Type::Varchar => {
-                        let value:String = row.get(name);
-                        json_set!(&mut back_json; name; value);
-                    },
-                    Type::Text => {
-                        let value:String = row.get(name);
-                        json_set!(&mut back_json; name; value);
-                    },
-                    _ => {
-                        println!("ignore type:{}", column.type_().name());
-                    },
-                }
-            }
-            data.push(back_json);
-        }
-        json_set!(&mut rst_json; "data"; data);
-        json_set!(&mut rst_json; "rows"; rows.len());
-        rst_json
+        rows_to_json(rows)
     }
 
 }
@@ -132,105 +152,6 @@ impl DbPool for MyDbPool {
         }
     }
 
-    fn stream<F>(&self, sql:&str, mut f:F) -> Result<i32, i32> where F:FnMut(Json) -> bool + 'static {
-        let conn = try!(self.get_connection());
-        let rst = conn.query("BEGIN", &[]);
-
-        //begin
-        let rst = rst.and_then(|rows| {
-            let json = self.get_back_json(rows);
-            println!("{}", json);
-            Result::Ok(1)
-        }).or_else(|err|{
-            println!("{}", err);
-            Result::Err(-1)
-        });
-
-        //cursor
-        let rst = rst.and_then(|_| {
-                let cursor_sql = format!("DECLARE myportal CURSOR FOR {}", sql);
-                println!("{}", cursor_sql);
-                let rst = conn.query(&cursor_sql, &[]);
-                rst.and_then(|rows|{
-                let json = self.get_back_json(rows);
-                println!("{}", json);
-                Result::Ok(1)
-            }).or_else(|err|{
-                println!("{}", err);
-                Result::Err(-1)
-            })
-        });
-
-        let rst = rst.and_then(|_| {
-            let fetch_sql = "FETCH NEXT in myportal";
-            println!("{}", fetch_sql);
-
-            let mut flag = 0;
-            loop {
-                let rst = conn.query(&fetch_sql, &[]);
-                let _ = rst.and_then(|rows|{
-                    let json = self.get_back_json(rows);
-                    let rows = json_i64!(&json; "rows");
-                    if rows < 1 {
-                        flag = -2;
-                    } else {
-                        let f_back = f(json);
-                        if !f_back {
-                            flag = -2;
-                        }
-                    }
-                    Result::Ok(flag)
-                }).or_else(|err|{
-                    println!("{}", err);
-                    flag = -1;
-                    Result::Err(flag)
-                });
-                if flag < 0 {
-                    break;
-                }
-            }
-            match flag {
-                -1 => {
-                    Result::Err(-1)
-                },
-                _ => {
-                    Result::Ok(1)
-                },
-            }
-        });
-
-        //close the portal
-        let rst = rst.and_then(|_|{
-                let close_sql = "CLOSE myportal";
-            println!("{}", close_sql);
-            let rst = conn.query(&close_sql, &[]);
-            rst.and_then(|rows|{
-                let json = self.get_back_json(rows);
-                println!("{}", json);
-                Result::Ok(1)
-            }).or_else(|err|{
-                println!("{}", err);
-                Result::Err(-1)
-            })
-        });
-
-        //end the cursor
-        let rst = rst.and_then(|_|{
-                let end_sql = "END";
-            println!("{}", end_sql);
-            let rst = conn.query(&end_sql, &[]);
-            rst.and_then(|rows|{
-                let json = self.get_back_json(rows);
-                println!("{}", json);
-                Result::Ok(1)
-            }).or_else(|err|{
-                println!("{}", err);
-                Result::Err(-1)
-            })
-            });
-
-        rst
-    }
 }
 
 pub struct DataBase<T> {
@@ -298,18 +219,98 @@ impl<T:DbPool> DataBase<T> {
 
 }
 
+///call sql with stream result, once a row
+pub fn stream<F>(conn:Connection, sql:&str, mut f:F) -> Result<i32, i32> where F:FnMut(Json) -> bool {
+    let rst = conn.query("BEGIN", &[]);
+    let rst = rst.or_else(|err| {
+        println!("{}", err);
+        Result::Err(-1)
+    });
+    let rows = try!(rst);
+    let json = rows_to_json(rows);
+    println!("{}", json);
 
-fn main()
+  	let cursor_sql = format!("DECLARE myportal CURSOR FOR {}", sql);
+   	println!("{}", cursor_sql);
+   	let rst = conn.query(&cursor_sql, &[]);
+    let rst = rst.or_else(|err| {
+        println!("{}", err);
+        Result::Err(-1)
+    });
+    let rows = try!(rst);
+    let json = rows_to_json(rows);
+    println!("{}", json);
+
+    let fetch_sql = "FETCH NEXT in myportal";
+    println!("{}", fetch_sql);
+
+    loop {
+        let rst = conn.query(&fetch_sql, &[]);
+        let rst = rst.or_else(|err| {
+            println!("{}", err);
+            Result::Err(-1)
+        });
+        let rows = try!(rst);
+        let mut json = rows_to_json(rows);
+        let mut json_obj = json.as_object_mut().unwrap();
+        let rows_node = json_obj.remove("rows").unwrap();
+        let row_count = rows_node.as_i64().unwrap();
+        if row_count < 1 {
+            break;
+        }
+        let mut data_node = json_obj.remove("data").unwrap();
+        let mut array = data_node.as_array_mut().unwrap();
+        let data = array.remove(0);
+        let f_back = f(data);
+        if !f_back {
+            break;
+        }
+    }
+
+    //close the portal
+   	let close_sql = "CLOSE myportal";
+    println!("{}", close_sql);
+    let rst = conn.query(&close_sql, &[]);
+    let rst = rst.or_else(|err| {
+        println!("{}", err);
+        Result::Err(-1)
+    });
+    let rows = try!(rst);
+    let json = rows_to_json(rows);
+    println!("{}", json);
+
+    //end the cursor
+    let end_sql = "END";
+	println!("{}", end_sql);
+	let rst = conn.query(&end_sql, &[]);
+    let rst = rst.or_else(|err| {
+        println!("{}", err);
+        Result::Err(-1)
+    });
+    let rows = try!(rst);
+    let json = rows_to_json(rows);
+    println!("{}", json);
+
+    Result::Ok(1)
+}
+
+fn main() {
+    let _ = try_main();
+}
+
+fn try_main() -> Result<i32, i32>
 {
     let dsn = "postgresql://postgres:1988lm@localhost/test";
     let my_dc:MyDbPool = MyDbPool::new(dsn, 10);
 
-    let _ = my_dc.stream("select * from test where name='a'", |set| {
+    let conn = my_dc.get_connection()?;
+    let _ = stream(conn, "select * from test where name='a'", |set| {
         println!("{}", set);
         true
     });
 
-    let _ = my_dc.stream("select * from test where name='bbc'", |set| {
+    let conn = my_dc.get_connection()?;
+    let _ = stream(conn, "select * from test where name='bbc'", |set| {
         println!("{}", set);
         true
     });
@@ -320,45 +321,6 @@ fn main()
     let doc = Json::from_str("{}").unwrap();
     let op = Json::from_str("{}").unwrap();
     let rst = table.find_one(&cdata, &doc, &op);
-	//println!("the condition is {}", );
 
-    /*
-    let my_db = DataBase::new("main", Arc::new(my_dc));
-    let test_table = my_db.get_table("test").expect("table not exists.");
-    let fd_back = test_table.find_by_str("{}", "{}", "{}");
-    println!("{}", fd_back.unwrap());
-
-
-	let data = Json::from_str("{\"sort\": [{\"name\":1}, {\"id\":-1}], \"limit\": 1, \"offset\": 10, \"ret\":{\"id\":1}}").unwrap();
-	let op = table.get_options(&data);
-	println!("the op is {}.", op);
-
-	let cdata = Json::from_str("{\"age\":{\"$in\":[1, 2, 3]}, \"nickname\":{\"$lt\":\"abc\"}, \"name\":\"lim'ing\", \"$or\":[{\"name\":\"liming\"}, {\"password\":\"123\"}]}").unwrap();
-	println!("the condition is {}", table.condition(&cdata, "name"));
-
-    let up_data = Json::from_str("{\"$set\":{\"name\":\"123\"}, \"$inc\":{\"age\":10}}").unwrap();
-    table.get_update_str(&up_data);
-    
-    let count_data = Json::from_str("{}").unwrap();
-    let count_options = Json::from_str("{}").unwrap();
-    let count_back = table.count(&count_data, &count_options);
-    println!("the count back is {}.", count_back);
-    
-    let fd_cond = Json::from_str("{\"name\":\"123\"}").unwrap();
-    let fd_data = Json::from_str("{}").unwrap();
-    let fd_options = Json::from_str("{}").unwrap();
-    let fd_back = table.find(&fd_cond, &fd_data, &fd_options);
-    println!("the back is {}", fd_back);
-
-
-    let sv_data = Json::from_str("{\"name\":\"123\", \"nickname\":\"ming\", \"password\":\"123456\", \"age\":1}").unwrap();
-    let sv_options = Json::from_str("{\"ret\":{\"id\":1}}").unwrap();
-    let sv_back = table.save(&sv_data, &sv_options);
-    println!("the save back is {}", sv_back);
-
-    let del_cond = Json::from_str("{\"name\":\"1234\"}").unwrap();
-    let del_options = Json::from_str("{}").unwrap();
-    let del_back = table.remove(&del_cond, &del_options);
-    println!("the del back is {}", del_back);
-    */
+    Ok(1)
 }
