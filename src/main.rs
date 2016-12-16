@@ -17,7 +17,7 @@ use rustc_serialize::json::ToJson;
 use std::str::FromStr;
 
 extern crate postgres;
-use postgres::{Connection, SslMode};
+use postgres::{Connection, TlsMode};
 use postgres::types::Type;
 
 extern crate rand;
@@ -86,7 +86,7 @@ impl MyDbPool {
     pub fn new(dsn:&str, size:u32) -> MyDbPool {
         let mut conns = vec![];
         for _ in 0..size {
-            let conn = match Connection::connect(dsn, SslMode::None) {
+            let conn = match Connection::connect(dsn, TlsMode::None) {
                 Ok(conn) => conn,
                 Err(e) => {
                     println!("Connection error: {}", e);
@@ -117,7 +117,7 @@ impl MyDbPool {
 impl DbPool for MyDbPool {
 
     fn get_connection(&self) -> Result<Connection, i32> {
-        let rst = match Connection::connect(self.dsn.as_str(), SslMode::None) {
+        let rst = match Connection::connect(self.dsn.as_str(), TlsMode::None) {
             Ok(conn) => Result::Ok(conn),
             Err(e) => {
                 println!("Connection error: {}", e);
