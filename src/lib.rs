@@ -343,11 +343,11 @@ impl<T:DbPool> Table<T> {
                 if key == "set" {
                     let set_obj = (&value).as_object().unwrap();
                     for (set_key, set_value) in set_obj.iter() {
-                        if set_count > 0 {
-                            ret = ret + ",";
-                        }
                         let col_option:Option<&Column> = self.col_list.get(set_key);
                         if col_option.is_some() {
+                            if set_count > 0 {
+                                ret = ret + ",";
+                            }
                             let col = col_option.unwrap();
                             ret = ret + &col.get_kv_pair("=", DbUtil::get_pure_json_string(&set_value));
                             set_count = set_count + 1;
