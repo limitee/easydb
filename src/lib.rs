@@ -339,7 +339,7 @@ impl<T:DbPool> Table<T> {
         for (key, value) in data_obj.iter() {
             let iter = re.captures_iter(key);
             if let Some(x) = iter.last() {
-                let key:&str = x.at(1).unwrap_or("");
+                let key:&str = x.get(1).map_or("", |m|m.as_str());
                 if key == "set" {
                     let set_obj = (&value).as_object().unwrap();
                     for (set_key, set_value) in set_obj.iter() {
@@ -384,7 +384,7 @@ impl<T:DbPool> Table<T> {
         for (key, value) in data_obj.iter() {
             let iter = re.captures_iter(key);
             if let Some(x) = iter.last() {
-                let key:&str = x.at(1).unwrap_or("");
+                let key:&str = x.get(1).map_or("", |m|m.as_str());
                 if key == "set" {
                     let set_obj = (&value).as_object().unwrap();
                     for (set_key, set_value) in set_obj.iter() {
@@ -434,7 +434,7 @@ impl<T:DbPool> Table<T> {
             //如果匹配上 
             if let Some(x) = iter.last() {
                 let mut exp:String = "(".to_string();
-                let key:&str = x.at(1).unwrap_or("");
+                let key:&str = x.get(1).map_or("", |m|m.as_str());
                 if key == "or" {
                     let or_data_array:&Vec<Json> = value.as_array().unwrap();
                     let mut or_count:i32 = 0;
